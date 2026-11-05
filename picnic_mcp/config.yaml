@@ -1,5 +1,5 @@
 name: "Picnic MCP"
-version: "0.4.1"
+version: "0.5.0"
 slug: "picnic_mcp"
 description: >-
   Let AI assistants such as Claude use your Picnic grocery account — search
@@ -32,10 +32,12 @@ ports_description:
 watchdog: "tcp://[HOST]:[PORT:8097]"
 startup: application
 boot: auto
-# hassio_api: run.sh writes the generated bearer token back into this
-# add-on's own options (POST /addons/self/options). Nothing else is used.
+# Supervisor access manages the app's own options/identity. Core API and
+# /config access provision only the optional Picnic remote integration.
 hassio_api: true
-homeassistant_api: false
+homeassistant_api: true
+map:
+  - config:rw
 options:
   picnic_email: ""
   picnic_password: ""
@@ -44,6 +46,7 @@ options:
   # the OAuth issuer instead of trusting the request's Host header. Leave
   # blank for local-only use.
   mcp_url: ""
+  enable_remote_access: false
   # Left blank on purpose: no secret belongs in this repository. run.sh
   # generates one on first start and saves it back here.
   mcp_auth_token: ""
@@ -60,6 +63,7 @@ schema:
   picnic_password: password?
   country_code: list(NL|DE|FR)
   mcp_url: str?
+  enable_remote_access: bool
   mcp_auth_token: password?
   allow_cart_changes: bool
   allow_delivery_changes: bool

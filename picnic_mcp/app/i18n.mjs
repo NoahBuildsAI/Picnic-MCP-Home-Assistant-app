@@ -65,6 +65,18 @@ const fr = {
   wait: "Un code vient d’être envoyé ; attendez une minute.", invalidCode: "Ce code ne semble pas valide.", noAccess: "Code accepté, mais Picnic n’a pas encore autorisé l’accès.", authorize: "Autoriser", oauthTitle: "Autoriser le client", oauthIntro: "Ce client souhaite accéder à votre compte Picnic via Home Assistant : rechercher des produits, consulter votre panier et vos livraisons et les modifier selon les autorisations.", oauthRedirect: "Après autorisation, vous serez redirigé vers", oauthCheck: "Continuez uniquement s’il s’agit de l’application que vous souhaitez connecter.", oauthToken: "Jeton d’accès", oauthTokenHelp: "Le jeton mcp_auth_token se trouve dans Configuration de cette application dans Home Assistant.", oauthLimit: "Trop de tentatives. Réessayez dans 15 minutes.", oauthWrong: "Le jeton est incorrect.",
 };
 
+const remote = {
+  en: { remoteTitle: "Remote access", remoteHelp: "Copy the URL into ChatGPT as a custom MCP server and select OAuth. If setup is waiting, restart Home Assistant once. Keep this URL private.",
+    remoteStates: { disabled: "off", starting: "starting", restart_required: "waiting for Home Assistant setup / restart", waiting_for_home_assistant: "waiting for Home Assistant", no_remote_url: "enable Nabu Casa remote access or configure an external HTTPS URL in Home Assistant", ready: "ready" } },
+  de: { remoteTitle: "Remote-Zugang", remoteHelp: "Kopiere die URL in ChatGPT als eigenen MCP-Server und wähle OAuth. Falls die Einrichtung wartet, starte Home Assistant einmal neu. Behandle die URL vertraulich.",
+    remoteStates: { disabled: "aus", starting: "wird vorbereitet", restart_required: "wartet auf Home-Assistant-Einrichtung / Neustart", waiting_for_home_assistant: "wartet auf Home Assistant", no_remote_url: "Nabu-Casa-Fernzugriff aktivieren oder eine externe HTTPS-Adresse in Home Assistant einrichten", ready: "bereit" } },
+  nl: { remoteTitle: "Externe toegang", remoteHelp: "Kopieer de URL naar ChatGPT als eigen MCP-server en kies OAuth. Wacht de installatie, herstart Home Assistant dan eenmaal. Houd deze URL geheim.",
+    remoteStates: { disabled: "uit", starting: "wordt voorbereid", restart_required: "wacht op Home Assistant-installatie / herstart", waiting_for_home_assistant: "wacht op Home Assistant", no_remote_url: "activeer externe toegang via Nabu Casa of stel een externe HTTPS-URL in Home Assistant in", ready: "gereed" } },
+  fr: { remoteTitle: "Accès à distance", remoteHelp: "Copiez l’URL dans ChatGPT comme serveur MCP personnalisé et choisissez OAuth. Si la configuration attend, redémarrez Home Assistant une fois. Gardez cette URL privée.",
+    remoteStates: { disabled: "désactivé", starting: "préparation", restart_required: "en attente de la configuration / du redémarrage de Home Assistant", waiting_for_home_assistant: "en attente de Home Assistant", no_remote_url: "activez l’accès distant Nabu Casa ou configurez une URL HTTPS externe dans Home Assistant", ready: "prêt" } },
+};
+
 export function messagesForCountry(country) {
-  return ({ DE: de, NL: nl, FR: fr })[String(country ?? "").toUpperCase()] ?? en;
+  const messages = ({ DE: de, NL: nl, FR: fr })[String(country ?? "").toUpperCase()] ?? en;
+  return { ...messages, ...remote[messages.lang] };
 }

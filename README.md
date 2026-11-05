@@ -18,6 +18,12 @@ deliveries. You still check out in the Picnic app yourself.
 
 ## What this add-on adds
 
+- **Optional Nabu Casa remote access.** Enable remote access, finish the initial
+  Home Assistant setup/restart if requested, and copy the Picnic-specific URL
+  into ChatGPT with OAuth. The app provisions its own bridge; it doesn't reuse
+  or reconfigure the HA-MCP proxy. See `picnic_mcp/DOCS.md` for setup, permissions
+  and removal instructions.
+
 - **Authentication.** A bearer token on every MCP request, generated on first
   start, plus an OAuth 2.1 layer (dynamic client registration + PKCE) so
   Claude on the web, desktop, iOS and Android can connect with no header

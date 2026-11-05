@@ -44,6 +44,7 @@ import { installFetchProxy } from "../src/utils/proxy.ts";
 import { createOAuth, timingSafeEqualStr } from "./oauth.mjs";
 import { iconRoutes, loadIcon, serverIcons, withBranding } from "./branding.mjs";
 import { messagesForCountry } from "./i18n.mjs";
+import { connectionBase, readRemoteInfo } from "./remote.mjs";
 
 /* ------------------------------------------------------------------ */
 /* Configuration (exported by run.sh from the add-on options)          */
@@ -66,6 +67,13 @@ const MAX_SESSIONS = 50;
 const flag = (name) => /^(true|yes|1|on)$/i.test(process.env[name] ?? "");
 // Escape hatch for running the dashboard outside Supervisor (local dev).
 const ALLOW_ANY_INGRESS_SOURCE = flag("ALLOW_ANY_INGRESS_SOURCE");
+const REMOTE_ENABLED = flag("ENABLE_REMOTE_ACCESS");
+const remoteInfo = () => readRemoteInfo(`${DATA_DIR}/remote-info.json`);
+const connectionUrl = () => (REMOTE_ENABLED && remoteInfo().status === "ready" ? remoteInfo().url : MCP_URL);
+const publicBase = () => {
+  try { return connectionBase(connectionUrl()); }
+  catch { return ""; }
+};
 
 function log(level, msg, extra) {
   const order = { debug: 0, info: 1, warning: 2, error: 3 };
@@ -75,23 +83,10 @@ function log(level, msg, extra) {
 
 // The public origin OAuth discovery advertises, from the operator's mcp_url
 // rather than from the request, whose forwarded Host the caller controls.
-const PUBLIC_ORIGIN = (() => {
-  if (!MCP_URL) return "";
-  try {
-    const url = new URL(MCP_URL);
-    if (url.pathname.replace(/\/+$/, "") !== "/mcp") {
-      log("warning", `mcp_url's path is "${url.pathname}" but this add-on serves MCP at "/mcp" — clients must use the latter`, { mcp_url: MCP_URL });
-    }
-    return url.origin;
-  } catch {
-    log("warning", "mcp_url is not a valid URL; OAuth metadata will use the request host instead", { mcp_url: MCP_URL });
-    return "";
-  }
-})();
+const PUBLIC_ORIGIN = publicBase();
 
 // Shipped next to the bundle by the Dockerfile; see branding.mjs.
 const ICON_PNG = loadIcon(new URL("./icon.png", import.meta.url));
-const SERVER_ICONS = serverIcons(ICON_PNG, PUBLIC_ORIGIN);
 
 /* ------------------------------------------------------------------ */
 /* Tool policy                                                        */
@@ -309,7 +304,7 @@ class SessionServerFactory extends BaseTransportServer {
   async start() {}
   async stop() {}
   create() {
-    return withBranding(this.createConfiguredServer(), { title: "Picnic", icons: SERVER_ICONS });
+    return withBranding(this.createConfiguredServer(), { title: "Picnic", icons: serverIcons(ICON_PNG, publicBase()) });
   }
 }
 const serverFactory = new SessionServerFactory();
@@ -317,6 +312,7 @@ const serverFactory = new SessionServerFactory();
 const oauth = createOAuth({
   storePath: `${DATA_DIR}/oauth-store.json`,
   publicOrigin: PUBLIC_ORIGIN,
+  getPublicBase: publicBase,
   getAuthToken: () => AUTH_TOKEN,
   log,
   messages: t,
@@ -415,6 +411,17 @@ const app = express();
 app.set("trust proxy", "loopback, linklocal, uniquelocal");
 app.disable("x-powered-by");
 
+// The HA bridge always adds this marker; clients cannot remove it through
+// the bridge. Turning remote access off therefore fails closed even while
+// HA is temporarily unreachable and the helper is retrying its update.
+app.use((req, res, next) => {
+  if (req.headers["x-picnic-remote"] && (!REMOTE_ENABLED || remoteInfo().status !== "ready")) {
+    res.status(404).json({ error: "remote_disabled" });
+    return;
+  }
+  next();
+});
+
 app.use(oauth.router);
 
 // Liveness only, so it can stay unauthenticated on a public hostname.
@@ -462,7 +469,8 @@ function maskEmail(email) {
 
 function renderDashboard(banner = "") {
   const stateClass = picnic.state === "ready" ? "ok" : picnic.state === "failed" ? "bad" : "warn";
-  const mcpUrl = MCP_URL || `http://<home-assistant-host>:${PORT}/mcp`;
+  const mcpUrl = connectionUrl() || `http://<home-assistant-host>:${PORT}/mcp`;
+  const remote = REMOTE_ENABLED ? remoteInfo() : { status: "disabled" };
 
   const twoFa = picnic.state === "needs_2fa" || picnic.state === "failed" ? `
   <h2>${escapeHtml(t.twofaTitle)}</h2>
@@ -529,6 +537,8 @@ function renderDashboard(banner = "") {
   <p class="small">${escapeHtml(t.configHelp)}</p>
 
   <h2>${escapeHtml(t.connection)}</h2>
+  <p><strong>${escapeHtml(t.remoteTitle)}</strong>: ${escapeHtml(t.remoteStates[remote.status] || t.remoteStates.starting)}</p>
+  ${REMOTE_ENABLED ? `<p class="small">${escapeHtml(t.remoteHelp)}</p>` : ""}
   <div class="field">
     <input class="mono" readonly value="${escapeHtml(mcpUrl)}" onclick="this.select()">
     <button onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">${escapeHtml(t.copyUrl)}</button>

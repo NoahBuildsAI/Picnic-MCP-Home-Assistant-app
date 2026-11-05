@@ -16,6 +16,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import fs from "node:fs";
 import express from "express";
 import { messagesForCountry } from "./i18n.mjs";
+import { resourceMetadataUrl } from "./remote.mjs";
 
 const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 const REFRESH_TOKEN_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days, sliding (rotated on use)
@@ -75,7 +76,7 @@ function redirectHost(uri) {
  * @param {() => string} opts.getAuthToken
  * @param {(level: string, msg: string, extra?: object) => void} opts.log
  */
-export function createOAuth({ storePath, publicOrigin, getAuthToken, log, messages = messagesForCountry() }) {
+export function createOAuth({ storePath, publicOrigin, getPublicBase, getAuthToken, log, messages = messagesForCountry() }) {
   const empty = () => ({ version: STORE_VERSION, clients: {}, accessTokens: {}, refreshTokens: {} });
   let store;
   let migrated = false;
@@ -158,7 +159,8 @@ export function createOAuth({ storePath, publicOrigin, getAuthToken, log, messag
   // With "trust proxy" on, the request's host can come from X-Forwarded-Host,
   // which the caller controls. Prefer the operator's configured origin so the
   // discovery documents can't be made to advertise someone else's hostname.
-  const origin = (req) => publicOrigin || `${req.protocol}://${req.get("host")}`;
+  const origin = (req) => getPublicBase?.() || publicOrigin || `${req.protocol}://${req.get("host")}`;
+  const formAction = (req) => new URL(`${origin(req)}/authorize`).pathname;
 
   function protectedResourceMetadata(req, res) {
     res.json({
@@ -184,7 +186,7 @@ export function createOAuth({ storePath, publicOrigin, getAuthToken, log, messag
     });
   }
 
-  function consentPage({ clientName, redirectUri, error, hiddenFields }) {
+  function consentPage({ clientName, redirectUri, error, hiddenFields, formAction = "/authorize" }) {
     const hidden = Object.entries(hiddenFields)
       .map(([k, v]) => `<input type="hidden" name="${escapeHtml(k)}" value="${escapeHtml(v ?? "")}">`)
       .join("\n    ");
@@ -211,7 +213,7 @@ export function createOAuth({ storePath, publicOrigin, getAuthToken, log, messag
   <p class="small">${escapeHtml(messages.oauthRedirect)} <code>${escapeHtml(redirectHost(redirectUri))}</code>.
   ${escapeHtml(messages.oauthCheck)}</p>
   ${error ? `<p class="error">${escapeHtml(error)}</p>` : ""}
-  <form method="post" action="/authorize">
+  <form method="post" action="${escapeHtml(formAction)}">
     ${hidden}
     <label for="token">${escapeHtml(messages.oauthToken)}</label>
     <input type="password" id="token" name="token" autocomplete="off" autofocus required>
@@ -319,6 +321,7 @@ export function createOAuth({ storePath, publicOrigin, getAuthToken, log, messag
     res.set("Cache-Control", "no-store");
     res.set("X-Frame-Options", "DENY");
     res.type("html").send(consentPage({
+      formAction: formAction(req),
       clientName: client.client_name,
       redirectUri: redirect_uri,
       hiddenFields: { client_id, redirect_uri, state: typeof state === "string" ? state : "", code_challenge },
@@ -343,6 +346,7 @@ export function createOAuth({ storePath, publicOrigin, getAuthToken, log, messag
     }
 
     const again = (status, error) => res.status(status).type("html").send(consentPage({
+      formAction: formAction(req),
       clientName: client.client_name,
       redirectUri: redirect_uri,
       error,
@@ -417,7 +421,7 @@ export function createOAuth({ storePath, publicOrigin, getAuthToken, log, messag
   return {
     router,
     /** RFC 9728 document URL for the WWW-Authenticate header on a 401. */
-    resourceMetadataUrl: (req) => `${origin(req)}/.well-known/oauth-protected-resource/mcp`,
+    resourceMetadataUrl: (req) => resourceMetadataUrl(origin(req)),
     // Read-only on purpose: expired entries are pruned the next time tokens
     // are issued, so checking a token never writes to disk on the request path.
     isValidAccessToken(token) {

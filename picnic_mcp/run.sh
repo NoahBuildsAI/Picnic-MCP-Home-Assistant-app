@@ -64,6 +64,10 @@ else
 fi
 export MCP_AUTH_TOKEN
 
+export ENABLE_REMOTE_ACCESS
+ENABLE_REMOTE_ACCESS="$(bashio::config 'enable_remote_access')"
+python3 /app/remote_setup.py &
+
 bashio::log.info "Starting Picnic MCP gateway on :${MCP_PORT}"
 cd /app || exit 1
 exec node gateway.mjs

@@ -1,4 +1,7 @@
 configuration:
+  enable_remote_access:
+    name: Remote access through Home Assistant
+    description: Generate a separate Picnic MCP URL through Nabu Casa or your existing Home Assistant HTTPS address. First setup can require one Home Assistant restart.
   picnic_email:
     name: Picnic e-mail
     description: The e-mail address you log in to the Picnic app with.

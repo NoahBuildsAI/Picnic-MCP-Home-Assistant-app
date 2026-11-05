@@ -1,0 +1,13 @@
+{
+  "title": "Picnic MCP Remote",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Picnic MCP Remote",
+        "description": "This integration is configured automatically by the Picnic MCP app when remote access is enabled.",
+        "data": {"addon_slug": "Picnic app ID", "remote_key": "Remote route key"}
+      }
+    },
+    "abort": {"already_configured": "This Picnic app is already configured.", "invalid_config": "Invalid Picnic app ID or route key."}
+  }
+}

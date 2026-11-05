@@ -7,3 +7,6 @@ picnic-session*.json
 picnic-device*.json
 oauth-store*.json
 options.json
+.venv/
+__pycache__/
+.work/

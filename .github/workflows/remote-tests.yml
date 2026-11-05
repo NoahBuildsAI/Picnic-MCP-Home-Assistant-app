@@ -1,0 +1,30 @@
+name: Picnic remote tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  remote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: python -m pip install aiohttp==3.13.2
+      - name: Build the actual gateway against the pinned Picnic sources
+        run: |
+          git clone --no-checkout https://github.com/ivo-toby/mcp-picnic.git .work/upstream
+          git -C .work/upstream checkout d235da4325f94c5e9b6284dc4324281159179127
+          cd .work/upstream
+          npm ci --ignore-scripts --no-audit --no-fund
+          cp -r ../../picnic_mcp/app addon
+          mkdir -p ../build
+          npx esbuild addon/gateway.mjs --bundle --platform=node --format=esm --target=node22 --outfile=../build/gateway.mjs --banner:js="import { createRequire } from 'module'; const require = createRequire(import.meta.url);"
+          cp ../../picnic_mcp/icon.png ../build/icon.png
+      - run: npm test
+      - run: python -m unittest discover -s tests -p 'test_*.py' -v

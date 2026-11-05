@@ -43,12 +43,14 @@ FROM ${BUILD_FROM}
 
 # jq: run.sh merges the generated bearer token into options.json before
 # writing it back through the Supervisor API.
-RUN apk add --no-cache nodejs jq
+RUN apk add --no-cache nodejs jq python3
 
 COPY --from=build /build/out/ /app/
 # Served as the favicon and sent to MCP clients as serverInfo.icons.
 COPY icon.png /app/icon.png
 COPY run.sh /run.sh
+COPY remote_setup.py /app/remote_setup.py
+COPY remote_component/ /opt/remote_component/
 RUN chmod a+x /run.sh
 
 EXPOSE 8097 8096

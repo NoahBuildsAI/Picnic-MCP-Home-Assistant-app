@@ -18,6 +18,47 @@ machine.
 
 ## Quick start
 
+### Nabu Casa / existing Home Assistant remote access
+
+1. Enable **Remote access through Home Assistant** (`enable_remote_access`) in
+   this app's Configuration and restart the Picnic app.
+2. Open the Picnic app's web UI. The app installs its companion integration and
+   provisions a dedicated remote route. If it asks you to restart **Home
+   Assistant**, do that once. It never performs that restart automatically.
+3. When the dashboard says **ready**, copy its connection URL. It uses your
+   existing Nabu Casa hostname and a Picnic-specific path:
+   `https://<your-ha-host>/api/picnic_mcp_remote/<private-route-key>/mcp`.
+4. In ChatGPT on the web, add a custom MCP server named **Picnic**, paste the URL,
+   and choose **OAuth**. Leave the client ID and secret empty for automatic
+   registration. On the Picnic approval page, enter this app's `mcp_auth_token`.
+5. Install/select the resulting Picnic connection and test reading the cart.
+   Availability in ChatGPT and its mobile app depends on the account and product
+   surface; mobile use must be verified separately.
+
+No new domain, public app port, or second HA-MCP webhook proxy is needed. Keep
+`mcp_url` blank in this mode; the app detects Home Assistant's external HTTPS URL,
+preferring Nabu Casa. Nabu Casa remote access must be enabled and reachable.
+The existing Home Assistant MCP connection is independent.
+
+The URL's private route key and the Picnic app's OAuth/bearer authentication are
+both required for MCP access. The bridge exposes only MCP, OAuth discovery and
+sign-in endpoints, a health check, and the icon. The login/2FA dashboard and
+Home Assistant services are not exposed through this route.
+
+**Disable:** turn `enable_remote_access` off and restart the Picnic app. The
+Picnic gateway immediately rejects bridge requests, and the helper disables the
+HA route. Restarting the app with the option on reuses the route and sessions.
+If uninstalling the app, disable remote access first. The companion integration
+can then be removed from Settings > Devices & services; its own files remain in
+`custom_components/picnic_mcp_remote` until manually removed.
+
+**Permissions:** the app needs Home Assistant API access and write access to
+`/config` to install its companion. It only manages that integration's directory
+and entries. A previous version is saved under `/data/remote-component-backups`
+before replacement. The bridge has no generic destination/proxy setting.
+
+### Direct HTTPS hosting (existing setup)
+
 1. **Configuration tab:** fill in `picnic_email`, `picnic_password` and
    `country_code`. Save and **start** the add-on. On first start it also
    generates a random bearer token and saves it into `mcp_auth_token`.

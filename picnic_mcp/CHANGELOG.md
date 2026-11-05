@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.0
+
+- Optional remote access through Home Assistant's existing Nabu Casa / external
+  HTTPS URL. The app installs its own `picnic_mcp_remote` integration, provisions
+  a persistent route and shows the ready-to-copy Picnic MCP URL in its dashboard.
+- Picnic OAuth discovery, registration, approval, token refresh and streaming MCP
+  responses use Picnic-specific paths. They coexist with HA-MCP's remote routes.
+- Initial integration installation or updates can require a Home Assistant
+  restart; the app requests it but never restarts Home Assistant automatically.
+- Remote access is off by default. Local Picnic credentials, sessions and tool
+  permissions are retained. Existing direct HTTPS hosting remains supported.
+- App permissions now include Home Assistant API access and `/config` write
+  access to install only the companion integration. Previous companion files
+  are backed up under the app's `/data` before replacement.
+
 ## 0.4.1
 
 - The add-on's icon is now offered to MCP clients: as `serverInfo.icons`

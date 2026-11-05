@@ -1,0 +1,7 @@
+configuration:
+  enable_remote_access:
+    name: Remote-Zugang aktivieren
+    description: Erstellt eine eigene Picnic-Adresse über Nabu Casa oder deine vorhandene externe Home-Assistant-Adresse. Bei der ersten Einrichtung kann ein Home-Assistant-Neustart erforderlich sein.
+  mcp_url:
+    name: Eigene externe Adresse (optional)
+    description: Für einen eigenen Reverse-Proxy. Beim Remote-Zugang über Home Assistant wird die Adresse automatisch ermittelt.

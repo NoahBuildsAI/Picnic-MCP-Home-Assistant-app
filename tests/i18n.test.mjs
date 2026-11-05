@@ -34,6 +34,7 @@ test("real dashboard renders the right language, 2FA, escaping and confirmations
     const groups = Object.fromEntries(["shopping", "cart", "delivery", "account", "twofa"].map((key, index) => [key, { option: index ? "ALLOW_TEST" : null }]));
     const context = {
       t, picnic: { state: "needs_2fa", detail: t.needs2fa }, MCP_URL: "", PORT: 8097,
+      connectionUrl: () => "", REMOTE_ENABLED: false,
       TOOL_GROUPS: groups, groupEnabled: (group) => group === "shopping", withheldTools: [],
       oauth: { listClients: () => [{ client_name: "<script>alert(1)</script>", redirect_host: "example.org", created_at: 0 }] },
       publishedTools: [1], STATE_LABEL: { needs_2fa: t.states[4] }, PICNIC_EMAIL: "test@example.org", COUNTRY: country,
