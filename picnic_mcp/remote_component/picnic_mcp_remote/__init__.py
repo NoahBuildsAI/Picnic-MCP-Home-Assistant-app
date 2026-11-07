@@ -13,7 +13,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 DOMAIN = "picnic_mcp_remote"
-VERSION = "0.5.0"
+VERSION = "0.5.1"
 BASE = "/api/picnic_mcp_remote"
 PUBLIC_PATHS = frozenset({
     "mcp", "authorize", "token", "register", "health", "icon.png",
@@ -51,12 +51,12 @@ def _admin(request):
 
 async def async_setup(hass, config):
     if DOMAIN not in hass.data:
-        hass.data[DOMAIN] = True
         hass.http.register_view(StatusView(hass))
         hass.http.register_view(ConfigureView(hass))
         hass.http.register_view(ProxyView(hass))
         hass.http.register_view(ResourceMetadataView(hass))
         hass.http.register_view(ServerMetadataView(hass))
+        hass.data[DOMAIN] = True
     return True
 
 
@@ -159,7 +159,7 @@ class ProxyView(HomeAssistantView):
 
     post = get
     delete = get
-    options = get
+    # Home Assistant's CORS layer owns OPTIONS/preflight registration.
 
 
 class ResourceMetadataView(ProxyView):
@@ -173,7 +173,6 @@ class ResourceMetadataView(ProxyView):
         raise web.HTTPMethodNotAllowed(request.method, ["GET"])
 
     delete = post
-    options = post
 
 
 class ServerMetadataView(ProxyView):
@@ -185,4 +184,3 @@ class ServerMetadataView(ProxyView):
 
     post = ResourceMetadataView.post
     delete = post
-    options = post

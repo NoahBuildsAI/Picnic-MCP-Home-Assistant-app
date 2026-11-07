@@ -1,7 +1,7 @@
 {
   "domain": "picnic_mcp_remote",
   "name": "Picnic MCP Remote",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "config_flow": true,
   "documentation": "https://github.com/NoahBuildsAI/Picnic-MCP-Home-Assistant-app",
   "codeowners": [],

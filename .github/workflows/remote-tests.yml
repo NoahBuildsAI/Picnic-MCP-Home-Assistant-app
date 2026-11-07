@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.13'
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: python -m pip install aiohttp==3.13.2
+      - run: python -m pip install aiohttp==3.13.2 aiohttp-cors==0.8.1
       - name: Build the actual gateway against the pinned Picnic sources
         run: |
           git clone --no-checkout https://github.com/ivo-toby/mcp-picnic.git .work/upstream

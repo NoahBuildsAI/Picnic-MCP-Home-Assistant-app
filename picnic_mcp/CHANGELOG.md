@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+- Let Home Assistant register CORS preflight handlers to avoid an OPTIONS-route
+  collision when configured CORS origins are present.
+- Exercise view registration with the real CORS layer in the remote tests.
+
 ## 0.5.0
 
 - Optional remote access through Home Assistant's existing Nabu Casa / external

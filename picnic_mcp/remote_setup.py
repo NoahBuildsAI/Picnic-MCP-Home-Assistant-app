@@ -18,7 +18,7 @@ INFO = DATA / "remote-info.json"
 SOURCE = Path("/opt/remote_component") / DOMAIN
 DEST = Path("/config/custom_components") / DOMAIN
 API = "http://supervisor/core/api"
-VERSION = "0.5.0"
+VERSION = "0.5.1"
 
 
 def write_info(**info):

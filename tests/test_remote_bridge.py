@@ -18,6 +18,7 @@ import unittest
 from urllib.parse import parse_qs, urlparse
 
 import aiohttp
+import aiohttp_cors
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 
@@ -59,6 +60,26 @@ class LocalResolver(aiohttp.abc.AbstractResolver):
 
     async def close(self):
         pass
+
+
+class RegistrationTest(unittest.IsolatedAsyncioTestCase):
+    async def test_views_register_with_home_assistant_configured_cors(self):
+        app = web.Application()
+        cors = aiohttp_cors.setup(app, defaults={
+            "https://example.test": aiohttp_cors.ResourceOptions(allow_methods="*")})
+        # Follow HomeAssistantView.register: register all view methods first,
+        # then let HA's CORS layer add the preflight handler for each path.
+        for view_type in (bridge.StatusView, bridge.ConfigureView, bridge.ProxyView,
+                          bridge.ResourceMetadataView, bridge.ServerMetadataView):
+            view = view_type(SimpleNamespace())
+            routes = []
+            for name in ("get", "post", "delete", "put", "patch", "head", "options"):
+                if handler := getattr(view, name, None):
+                    async def dispatch(request, handler=handler):
+                        return await handler(request, **request.match_info)
+                    routes.append(app.router.add_route(name, view.url, dispatch))
+            cors.add(routes[0])
+        self.assertEqual(len([route for route in app.router.routes() if route.method == "OPTIONS"]), 5)
 
 
 class BridgeTest(unittest.IsolatedAsyncioTestCase):
